@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "gProxy/pkg/proto";
+
+message TCPStreamPacket {
+  bytes data = 1;
+}
+
+service ProxyService {
+  rpc Proxy (stream TCPStreamPacket) returns (stream TCPStreamPacket) {}
+}
