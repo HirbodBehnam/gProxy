@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"gProxy/api"
 	"gProxy/pkg/proto"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"net"
 	"os"
 	"os/signal"
@@ -11,7 +13,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -41,13 +42,17 @@ func main() {
 func runClient() {
 	if len(os.Args) < 4 {
 		fmt.Println("Use the program like this:")
-		fmt.Println("\t./gProxy client <LISTEN_ADDRESS> <SERVER_ADDRESS>")
+		fmt.Println("\t./gProxy client <LISTEN_ADDRESS> <SERVER_ADDRESS> [tls]")
 		os.Exit(1)
 	}
 
 	// Connect to gRPC server
 	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if len(os.Args) > 4 && os.Args[4] == "tls" {
+		opts = []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(nil))}
+	} else {
+		opts = []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	}
 	conn, err := grpc.NewClient(os.Args[3], opts...)
 	if err != nil {
 		log.Fatalf("fail to dial server: %v", err)
@@ -91,6 +96,13 @@ func runServer() {
 	apiData := &api.Server{ForwardAddress: os.Args[3]}
 	// Create the gRPC server
 	var opts []grpc.ServerOption
+	if len(os.Args) > 4 && os.Args[4] == "tls" {
+		creds, err := credentials.NewServerTLSFromFile("cert.pem", "key.pem")
+		if err != nil {
+			log.WithError(err).Fatalf("cannot load credentials")
+		}
+		opts = []grpc.ServerOption{grpc.Creds(creds)}
+	}
 	grpcServer := grpc.NewServer(opts...)
 	proto.RegisterProxyServiceServer(grpcServer, apiData)
 	go func() {
