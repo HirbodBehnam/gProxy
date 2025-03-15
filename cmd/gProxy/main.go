@@ -89,7 +89,7 @@ func runClient() {
 func runServer() {
 	if len(os.Args) < 4 {
 		fmt.Println("Use the program like this:")
-		fmt.Println("\t./gProxy server <LISTEN_ADDRESS> <FORWARD_ADDRESS>")
+		fmt.Println("\t./gProxy server <LISTEN_ADDRESS> <FORWARD_ADDRESS> [tls]")
 		os.Exit(1)
 	}
 
